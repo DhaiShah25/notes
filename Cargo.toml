@@ -1,0 +1,13 @@
+[package]
+name = "notes"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dirs = "5.0.1"
+figment = { version = "0.10.19", features = ["toml"] }
+jotdown = "0.6.0"
+log = "0.4.22"
+serde = { version = "1.0.210", features = ["derive"] }
+tiny_http = "0.12.0"
+walkdir = "2.5.0"
