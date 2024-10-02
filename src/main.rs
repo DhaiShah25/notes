@@ -11,7 +11,7 @@ use std::thread::spawn;
 struct Job {
     name: String,
     port: u16,
-    dir: std::path::PathBuf,
+    dir: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -20,18 +20,17 @@ struct Config {
 }
 
 fn main() {
-    let config: Config = Figment::new()
-        .merge(Toml::file("Settings.toml"))
-        .extract()
-        .unwrap();
+    let mut tmp = dirs::config_dir().unwrap();
+    tmp.push("notes/Settings.toml");
+    let config: Config = Figment::new().merge(Toml::file(tmp)).extract().unwrap();
 
     for job in config.job {
-        dbg!(&job);
+        log::info!("Job Started: {}", job.name);
         spawn(move || {
             let server = tiny_http::Server::http(format!("127.0.0.1:{}", job.port)).unwrap();
 
             for request in server.incoming_requests() {
-                handle(request);
+                handle(request, &job.dir);
             }
         });
     }
