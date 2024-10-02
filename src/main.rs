@@ -22,10 +22,30 @@ struct Config {
 fn main() {
     let mut tmp = dirs::config_dir().unwrap();
     tmp.push("notes/Settings.toml");
-    let config: Config = Figment::new().merge(Toml::file(tmp)).extract().unwrap();
+    let config: Config = match Figment::new().merge(Toml::file(&tmp)).extract() {
+        Ok(conf) => conf,
+        Err(..) => {
+            let _ = std::fs::write(
+                &tmp,
+                r#"# Use the following syntax to create jobs for each notes directory
+# [[job]]
+# name = <NAME>
+# port = <PORT_NUMBER>
+# dir = <ABSOLUTE_PATH_TO_NOTES_DIRECTORY>
+
+# To add styling you use styles.css file in the config directory
+# To add javascript scripts you just create a main.js file in the config directory (only this file will be sourced)"#,
+            );
+            println!(
+                "Please add information to the configuration at: {}",
+                tmp.to_string_lossy()
+            );
+            return;
+        }
+    };
 
     for job in config.job {
-        log::info!("Job Started: {}", job.name);
+        println!("Job {} started on http://127.0.0.1:{}", job.name, job.port);
         spawn(move || {
             let server = tiny_http::Server::http(format!("127.0.0.1:{}", job.port)).unwrap();
 
@@ -34,7 +54,8 @@ fn main() {
             }
         });
     }
-    let mut buffer = String::new();
-    let stdin = std::io::stdin(); // We get `Stdin` here.
+
+    let mut buffer = String::with_capacity(0);
+    let stdin = std::io::stdin();
     let _ = stdin.read_line(&mut buffer);
 }
